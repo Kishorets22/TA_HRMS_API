@@ -107,12 +107,18 @@ export class UpdateService {
       employeeDocument.documentTypeId = documentTypeId;
       employeeDocument.documentName =
         updateEmployeeDocumentDto.documentName ?? employeeDocument.documentName;
-      employeeDocument.issueDate = updateEmployeeDocumentDto.issueDate
-        ? new Date(updateEmployeeDocumentDto.issueDate)
-        : employeeDocument.issueDate;
-      employeeDocument.expiryDate = updateEmployeeDocumentDto.expiryDate
-        ? new Date(updateEmployeeDocumentDto.expiryDate)
-        : employeeDocument.expiryDate;
+      if (updateEmployeeDocumentDto.issueDate) {
+        employeeDocument.issueDate = new Date(
+          updateEmployeeDocumentDto.issueDate,
+        );
+      }
+
+      if (updateEmployeeDocumentDto.expiryDate) {
+        employeeDocument.expiryDate = new Date(
+          updateEmployeeDocumentDto.expiryDate,
+        );
+      }
+
       employeeDocument.remarks =
         updateEmployeeDocumentDto.remarks ?? employeeDocument.remarks;
 
