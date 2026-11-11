@@ -3,6 +3,7 @@ import { Type } from 'class-transformer';
 import {
   IsDateString,
   IsInt,
+  IsNotEmpty,
   IsOptional,
   IsString,
   MaxLength,
@@ -26,6 +27,7 @@ export class UpdateEmployeeDocumentDto {
   })
   @IsOptional()
   @IsString()
+  @IsNotEmpty()
   @MaxLength(200)
   documentName?: string;
 
@@ -51,5 +53,6 @@ export class UpdateEmployeeDocumentDto {
   })
   @IsOptional()
   @IsString()
+  @IsNotEmpty()
   remarks?: string;
 }

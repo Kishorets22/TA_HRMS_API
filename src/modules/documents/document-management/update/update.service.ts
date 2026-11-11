@@ -40,7 +40,7 @@ export class UpdateService {
       }
 
       const hasMetadataChanges = Object.values(updateEmployeeDocumentDto).some(
-        (value) => value !== undefined && value !== null,
+        Boolean,
       );
 
       if (!hasMetadataChanges && !file) {
@@ -71,10 +71,7 @@ export class UpdateService {
         return DOCUMENT_RESPONSES.updateNotFound(id);
       }
 
-      if (
-        updateEmployeeDocumentDto.documentTypeId !== undefined &&
-        updateEmployeeDocumentDto.documentTypeId !== null
-      ) {
+      if (updateEmployeeDocumentDto.documentTypeId) {
         const documentType =
           await this.documentManagementRepository.findActiveDocumentTypeById(
             updateEmployeeDocumentDto.documentTypeId,
@@ -92,31 +89,19 @@ export class UpdateService {
         document.documentTypeId = documentType.id;
       }
 
-      if (
-        updateEmployeeDocumentDto.documentName !== undefined &&
-        updateEmployeeDocumentDto.documentName !== null
-      ) {
+      if (updateEmployeeDocumentDto.documentName) {
         document.documentName = updateEmployeeDocumentDto.documentName;
       }
 
-      if (
-        updateEmployeeDocumentDto.issueDate !== undefined &&
-        updateEmployeeDocumentDto.issueDate !== null
-      ) {
+      if (updateEmployeeDocumentDto.issueDate) {
         document.issueDate = new Date(updateEmployeeDocumentDto.issueDate);
       }
 
-      if (
-        updateEmployeeDocumentDto.expiryDate !== undefined &&
-        updateEmployeeDocumentDto.expiryDate !== null
-      ) {
+      if (updateEmployeeDocumentDto.expiryDate) {
         document.expiryDate = new Date(updateEmployeeDocumentDto.expiryDate);
       }
 
-      if (
-        updateEmployeeDocumentDto.remarks !== undefined &&
-        updateEmployeeDocumentDto.remarks !== null
-      ) {
+      if (updateEmployeeDocumentDto.remarks) {
         document.remarks = updateEmployeeDocumentDto.remarks;
       }
 
