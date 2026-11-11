@@ -15,6 +15,12 @@ import type {
 
 import type { UpdateEmployeeDocumentResponse } from '../update/dto/update-employee-document-response.dto.js';
 
+import type {
+  RetrieveEmployeeDocumentListResponse,
+  RetrieveEmployeeDocumentResponse,
+  RetrieveEmployeeDocumentResponseDto,
+} from '../retrieve/dto/retrieve-employee-document-response.dto.js';
+
 export const DOCUMENT_CONSTANTS = {
   SOURCE: {
     EMPLOYEE_UPLOAD: 'EMPLOYEE_UPLOAD',
@@ -83,6 +89,29 @@ export function prepareEmployeeDocumentFile(
     fileKey: `temporary/${employeeId}/${randomUUID()}-${fileName}`,
     mimeType: file.mimetype,
     fileSize: file.size,
+  };
+}
+
+function toRetrievedEmployeeDocument(
+  document: EmployeeDocument,
+): RetrieveEmployeeDocumentResponseDto {
+  return {
+    id: document.id,
+    employeeId: document.employeeId,
+    documentTypeId: document.documentTypeId,
+    documentTypeName: document.documentType.name,
+    documentName: document.documentName,
+    documentSource: document.documentSource,
+    fileName: document.fileName,
+    mimeType: document.mimeType,
+    fileSize: document.fileSize,
+    issueDate: new Date(document.issueDate).toISOString(),
+    expiryDate: new Date(document.expiryDate).toISOString(),
+    remarks: document.remarks,
+    statusId: document.statusId,
+    statusName: document.status.name,
+    createdAt: document.createdAt,
+    updatedAt: document.updatedAt,
   };
 }
 
@@ -175,6 +204,57 @@ export const DOCUMENT_RESPONSES = {
     success: false,
     message,
     statusCode: HttpStatus.BAD_REQUEST,
+  }),
+
+  // RETRIEVE EMPLOYEE DOCUMENT
+  retrieved: (
+    document: EmployeeDocument,
+  ): RetrieveEmployeeDocumentResponse => ({
+    success: true,
+    message: 'Employee document retrieved successfully',
+    statusCode: HttpStatus.OK,
+    data: toRetrievedEmployeeDocument(document),
+  }),
+
+  // RETRIEVE EMPLOYEE DOCUMENTS BY EMPLOYEE ID
+  retrievedForEmployee: (
+    documents: EmployeeDocument[],
+  ): RetrieveEmployeeDocumentListResponse => {
+    let message = 'Employee documents retrieved successfully';
+    if (documents.length === 0) {
+      message = 'No employee documents found';
+    }
+
+    return {
+      success: true,
+      message,
+      statusCode: HttpStatus.OK,
+      data: documents.map(toRetrievedEmployeeDocument),
+      total: documents.length,
+    };
+  },
+
+  // INVALID EMPLOYEE DOCUMENT ID
+  invalidRetrieveId: (id: number): RetrieveEmployeeDocumentResponse => ({
+    success: false,
+    message: `Invalid employee document ID: ${id}`,
+    statusCode: HttpStatus.BAD_REQUEST,
+  }),
+
+  // INVALID EMPLOYEE ID
+  invalidRetrieveEmployeeId: (
+    id: number,
+  ): RetrieveEmployeeDocumentListResponse => ({
+    success: false,
+    message: `Invalid employee ID: ${id}`,
+    statusCode: HttpStatus.BAD_REQUEST,
+  }),
+
+  // EMPLOYEE DOCUMENT NOT FOUND
+  retrieveNotFound: (id: number): RetrieveEmployeeDocumentResponse => ({
+    success: false,
+    message: `Employee document with ID ${id} not found`,
+    statusCode: HttpStatus.NOT_FOUND,
   }),
 
   // NOT FOUND

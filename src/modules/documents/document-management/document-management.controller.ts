@@ -2,6 +2,7 @@
 import {
   Body,
   Controller,
+  Get,
   HttpException,
   HttpStatus,
   Logger,
@@ -19,10 +20,12 @@ import type { Response } from 'express';
 import {
   ApiBody,
   ApiConsumes,
+  ApiExtraModels,
   ApiOperation,
   ApiParam,
   ApiResponse,
   ApiTags,
+  getSchemaPath,
 } from '@nestjs/swagger';
 
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -39,6 +42,14 @@ import { UpdateEmployeeDocumentDto } from './update/dto/update-employee-document
 import { UpdateEmployeeDocumentResponseDto } from './update/dto/update-employee-document-response.dto.js';
 import type { UpdateEmployeeDocumentResponse } from './update/dto/update-employee-document-response.dto.js';
 
+import { RetrieveService } from './retrieve/retrieve.service.js';
+import { RetrieveEmployeeDocumentResponseDto } from './retrieve/dto/retrieve-employee-document-response.dto.js';
+
+import type {
+  RetrieveEmployeeDocumentListResponse,
+  RetrieveEmployeeDocumentResponse,
+} from './retrieve/dto/retrieve-employee-document-response.dto.js';
+
 @ApiTags('Employee Documents')
 @Controller('v1')
 export class DocumentManagementController {
@@ -47,6 +58,7 @@ export class DocumentManagementController {
   constructor(
     private readonly uploadService: UploadService,
     private readonly updateService: UpdateService,
+    private readonly retrieveService: RetrieveService,
   ) {}
 
   // UPLOAD EMPLOYEE DOCUMENT
@@ -124,6 +136,125 @@ export class DocumentManagementController {
 
       throw new HttpException(
         'An error occurred while uploading the Employee Document',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  // RETRIEVE EMPLOYEE DOCUMENT BY ID
+  @Get('employee-document/:id')
+  @ApiOperation({ summary: 'Get an employee document by ID' })
+  @ApiParam({ name: 'id', example: 501 })
+  @ApiExtraModels(RetrieveEmployeeDocumentResponseDto)
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Employee document retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        message: { type: 'string' },
+        statusCode: { type: 'number', example: HttpStatus.OK },
+        data: { $ref: getSchemaPath(RetrieveEmployeeDocumentResponseDto) },
+      },
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid employee document ID',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Employee document not found',
+  })
+  @ApiResponse({
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    description: 'An unexpected error occurred while retrieving the document',
+  })
+  async retrieveEmployeeDocumentById(
+    @Param('id', ParseIntPipe) id: number,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<RetrieveEmployeeDocumentResponse> {
+    try {
+      const response =
+        await this.retrieveService.retrievingEmployeeDocumentById(id);
+
+      res.status(response.statusCode);
+
+      return response;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      this.logger.error(
+        `[DOCUMENT] An error occurred while retrieving Employee Document ${id}: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
+
+      throw new HttpException(
+        'An error occurred while retrieving the Employee Document',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  // RETRIEVE EMPLOYEE DOCUMENTS BY EMPLOYEE ID
+  @Get('employee/:employeeId/documents')
+  @ApiOperation({ summary: 'Get all documents for an employee' })
+  @ApiParam({ name: 'employeeId', example: 101 })
+  @ApiExtraModels(RetrieveEmployeeDocumentResponseDto)
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Employee documents retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        message: { type: 'string' },
+        statusCode: { type: 'number', example: HttpStatus.OK },
+        data: {
+          type: 'array',
+          items: { $ref: getSchemaPath(RetrieveEmployeeDocumentResponseDto) },
+        },
+        total: { type: 'number', example: 2 },
+      },
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid employee ID',
+  })
+  @ApiResponse({
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    description:
+      'An unexpected error occurred while retrieving employee documents',
+  })
+  async retrieveEmployeeDocumentsByEmployeeId(
+    @Param('employeeId', ParseIntPipe) employeeId: number,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<RetrieveEmployeeDocumentListResponse> {
+    try {
+      const response =
+        await this.retrieveService.retrievingEmployeeDocumentsByEmployeeId(
+          employeeId,
+        );
+
+      res.status(response.statusCode);
+
+      return response;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      this.logger.error(
+        `[DOCUMENT] An error occurred while retrieving documents for employee ${employeeId}: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
+
+      throw new HttpException(
+        'An error occurred while retrieving Employee Documents',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
