@@ -11,6 +11,7 @@ import { DocumentManagementRepository } from './document-management/document-man
 
 import { DocumentManagementController } from './document-management/document-management.controller.js';
 import { UploadService } from './document-management/upload/upload.service.js';
+import { UpdateService } from './document-management/update/update.service.js';
 
 import { AwsS3Module } from '../../integrations/aws-s3/aws-s3.module.js';
 
@@ -27,6 +28,7 @@ import { AwsS3Module } from '../../integrations/aws-s3/aws-s3.module.js';
   controllers: [DocumentManagementController,],
   providers: [
     UploadService,
+    UpdateService,
     DocumentManagementRepository,
   ],
   exports: [
