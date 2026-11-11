@@ -13,6 +13,7 @@ import { DocumentManagementController } from './document-management/document-man
 import { UploadService } from './document-management/upload/upload.service.js';
 import { UpdateService } from './document-management/update/update.service.js';
 import { RetrieveService } from './document-management/retrieve/retrieve.service.js';
+import { ArchiveService } from './document-management/archive/archive.service.js';
 
 import { AwsS3Module } from '../../integrations/aws-s3/aws-s3.module.js';
 
@@ -31,6 +32,7 @@ import { AwsS3Module } from '../../integrations/aws-s3/aws-s3.module.js';
     UploadService,
     UpdateService,
     RetrieveService,
+    ArchiveService,
     DocumentManagementRepository,
   ],
   exports: [

@@ -42,6 +42,13 @@ export class DocumentManagementRepository {
     return this.employeeDocumentRepository.save(employeeDocument);
   }
 
+  // ARCHIVE EMPLOYEE DOCUMENT
+  async archiveEmployeeDocument(
+    employeeDocument: EmployeeDocument,
+  ): Promise<EmployeeDocument> {
+    return this.employeeDocumentRepository.save(employeeDocument);
+  }
+
   // GET ACTIVE DOCUMENT TYPE BY ID
   getActiveDocumentTypeById(id: number): Promise<DocumentType> {
     return this.documentTypeRepository.findOneByOrFail({
