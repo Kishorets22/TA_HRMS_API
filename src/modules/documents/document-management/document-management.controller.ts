@@ -50,6 +50,11 @@ import type {
   RetrieveEmployeeDocumentResponse,
 } from './retrieve/dto/retrieve-employee-document-response.dto.js';
 
+import { ArchiveService } from './archive/archive.service.js';
+import { ArchiveEmployeeDocumentResponseDto } from './archive/dto/archive-employee-document-response.dto.js';
+
+import type { ArchiveEmployeeDocumentResponse } from './archive/dto/archive-employee-document-response.dto.js';
+
 @ApiTags('Employee Documents')
 @Controller('v1')
 export class DocumentManagementController {
@@ -59,6 +64,7 @@ export class DocumentManagementController {
     private readonly uploadService: UploadService,
     private readonly updateService: UpdateService,
     private readonly retrieveService: RetrieveService,
+    private readonly archiveService: ArchiveService,
   ) {}
 
   // UPLOAD EMPLOYEE DOCUMENT
@@ -255,6 +261,54 @@ export class DocumentManagementController {
 
       throw new HttpException(
         'An error occurred while retrieving Employee Documents',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  // ARCHIVE EMPLOYEE DOCUMENT
+  @Patch('employee-document/:id/archive')
+  @ApiOperation({ summary: 'Archive an employee document' })
+  @ApiParam({ name: 'id', example: 501 })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Employee document archived successfully',
+    type: ArchiveEmployeeDocumentResponseDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid employee document ID',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Employee document not found',
+  })
+  @ApiResponse({
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    description: 'An unexpected error occurred while archiving the document',
+  })
+  async archiveEmployeeDocument(
+    @Param('id', ParseIntPipe) id: number,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<ArchiveEmployeeDocumentResponse> {
+    try {
+      const response = await this.archiveService.archiveEmployeeDocument(id);
+
+      res.status(response.statusCode);
+
+      return response;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      this.logger.error(
+        `[DOCUMENT] An error occurred while archiving Employee Document ${id}: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
+
+      throw new HttpException(
+        'An error occurred while archiving the Employee Document',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }

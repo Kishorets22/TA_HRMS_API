@@ -21,6 +21,8 @@ import type {
   RetrieveEmployeeDocumentResponseDto,
 } from '../retrieve/dto/retrieve-employee-document-response.dto.js';
 
+import type { ArchiveEmployeeDocumentResponse } from '../archive/dto/archive-employee-document-response.dto.js';
+
 export const DOCUMENT_CONSTANTS = {
   SOURCE: {
     EMPLOYEE_UPLOAD: 'EMPLOYEE_UPLOAD',
@@ -252,6 +254,34 @@ export const DOCUMENT_RESPONSES = {
 
   // EMPLOYEE DOCUMENT NOT FOUND
   retrieveNotFound: (id: number): RetrieveEmployeeDocumentResponse => ({
+    success: false,
+    message: `Employee document with ID ${id} not found`,
+    statusCode: HttpStatus.NOT_FOUND,
+  }),
+
+  // ARCHIVE EMPLOYEE DOCUMENT
+  archived: (
+    document: EmployeeDocument,
+  ): ArchiveEmployeeDocumentResponse => ({
+    success: true,
+    message: 'Employee document archived successfully',
+    statusCode: HttpStatus.OK,
+    data: {
+      id: document.id,
+      employeeId: document.employeeId,
+      archivedAt: document.archivedAt,
+    },
+  }),
+
+  // INVALID DOCUMENT ID
+  invalidArchiveId: (id: number): ArchiveEmployeeDocumentResponse => ({
+    success: false,
+    message: `Invalid employee document ID: ${id}`,
+    statusCode: HttpStatus.BAD_REQUEST,
+  }),
+
+  // DOCUMENT NOT FOUND
+  archiveNotFound: (id: number): ArchiveEmployeeDocumentResponse => ({
     success: false,
     message: `Employee document with ID ${id} not found`,
     statusCode: HttpStatus.NOT_FOUND,
