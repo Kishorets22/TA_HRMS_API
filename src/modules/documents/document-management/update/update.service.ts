@@ -26,23 +26,17 @@ export class UpdateService {
     file?: Express.Multer.File,
   ): Promise<UpdateEmployeeDocumentResponse> {
     this.logger.log(`[DOCUMENT] Updating employee document ${id}`);
-
     try {
       // VALIDATE EMPLOYEE DOCUMENT ID
       if (!isValidDocumentId(id)) {
-        this.logger.warn(`[DOCUMENT] Invalid employee document ID: ${id}`);
         return DOCUMENT_RESPONSES.invalidUpdateId(id);
       }
 
-      // VALIDATE UPDATE FIELDS
-      const hasMetadataChanges = Object.values(updateEmployeeDocumentDto).some(
-        Boolean,
-      );
-      if (!hasMetadataChanges && !file) {
-        this.logger.warn('[DOCUMENT] No document update fields were provided');
-        return DOCUMENT_RESPONSES.invalidUpdate(
-          'At least one document field or replacement file is required',
-        );
+      const employeeDocument =
+        await this.documentManagementRepository.getEmployeeDocumentById(id);
+      if (!employeeDocument) {
+        this.logger.warn(`[DOCUMENT] Employee document ${id} not found`);
+        return DOCUMENT_RESPONSES.updateNotFound(id);
       }
 
       // VALIDATE REPLACEMENT DOCUMENT FILE
@@ -90,89 +84,61 @@ export class UpdateService {
           return DOCUMENT_RESPONSES.invalidUpdateFile('Unsupported file type');
         }
 
-        this.logger.log(
-          '[DOCUMENT] Replacement file validation completed successfully',
-        );
+        this.logger.log('[DOCUMENT] Replacement file validated successfully');
       }
 
-      // FETCH EMPLOYEE DOCUMENT
-      const document =
-        await this.documentManagementRepository.getEmployeeDocumentById(id);
-      if (!document) {
-        this.logger.warn(`[DOCUMENT] Employee document ${id} not found`);
-        return DOCUMENT_RESPONSES.updateNotFound(id);
-      }
-      this.logger.log(
-        `[DOCUMENT] Employee document ${document.id} retrieved successfully`,
-      );
-
-      // VALIDATE AND UPDATE DOCUMENT TYPE
-      if (updateEmployeeDocumentDto.documentTypeId) {
+      const documentTypeId =
+        updateEmployeeDocumentDto.documentTypeId ??
+        employeeDocument.documentTypeId;
+      if (documentTypeId !== employeeDocument.documentTypeId) {
         const documentType =
           await this.documentManagementRepository.findActiveDocumentTypeById(
-            updateEmployeeDocumentDto.documentTypeId,
+            documentTypeId,
           );
         if (!documentType) {
           this.logger.warn(
-            `[DOCUMENT] Active document type ${updateEmployeeDocumentDto.documentTypeId} not found`,
+            `[DOCUMENT] Active document type ${documentTypeId} not found`,
           );
-          return DOCUMENT_RESPONSES.updateDocumentTypeNotFound(
-            updateEmployeeDocumentDto.documentTypeId,
-          );
+          return DOCUMENT_RESPONSES.updateDocumentTypeNotFound(documentTypeId);
         }
-        document.documentTypeId = documentType.id;
-        this.logger.log(
-          `[DOCUMENT] Document type updated to ${documentType.id}`,
-        );
       }
 
-      // UPDATE DOCUMENT DETAILS
-      if (updateEmployeeDocumentDto.documentName) {
-        document.documentName = updateEmployeeDocumentDto.documentName;
-      }
-
-      if (updateEmployeeDocumentDto.issueDate) {
-        document.issueDate = new Date(updateEmployeeDocumentDto.issueDate);
-      }
-
-      if (updateEmployeeDocumentDto.expiryDate) {
-        document.expiryDate = new Date(updateEmployeeDocumentDto.expiryDate);
-      }
-
-      if (updateEmployeeDocumentDto.remarks) {
-        document.remarks = updateEmployeeDocumentDto.remarks;
-      }
+      // ASSIGN ONLY THE EDITABLE FIELDS
+      employeeDocument.documentTypeId = documentTypeId;
+      employeeDocument.documentName =
+        updateEmployeeDocumentDto.documentName ?? employeeDocument.documentName;
+      employeeDocument.issueDate = updateEmployeeDocumentDto.issueDate
+        ? new Date(updateEmployeeDocumentDto.issueDate)
+        : employeeDocument.issueDate;
+      employeeDocument.expiryDate = updateEmployeeDocumentDto.expiryDate
+        ? new Date(updateEmployeeDocumentDto.expiryDate)
+        : employeeDocument.expiryDate;
+      employeeDocument.remarks =
+        updateEmployeeDocumentDto.remarks ?? employeeDocument.remarks;
 
       // UPDATE DOCUMENT FILE DETAILS
       if (file) {
         Object.assign(
-          document,
-          prepareEmployeeDocumentFile(file, document.employeeId),
-        );
-        this.logger.log(
-          '[DOCUMENT] Replacement file details prepared successfully',
+          employeeDocument,
+          prepareEmployeeDocumentFile(file, employeeDocument.employeeId),
         );
       }
 
-      // SAVE EMPLOYEE DOCUMENT DETAILS
+      // SAVE UPDATED EMPLOYEE DOCUMENT
       const updatedDocument =
         await this.documentManagementRepository.updateEmployeeDocument(
-          document,
+          employeeDocument,
         );
-
       this.logger.log(
-        `[DOCUMENT] Employee document ${id} updated successfully`,
+        `[DOCUMENT] Employee document ${updatedDocument.id} updated successfully`,
       );
 
-      // RETURN SUCCESS RESPONSE
       return DOCUMENT_RESPONSES.updated(updatedDocument);
     } catch (error) {
-      // HANDLE HTTP EXCEPTIONS
       if (error instanceof HttpException) {
         throw error;
       }
 
-      // HANDLE UNEXPECTED ERRORS
       this.logger.error(
         `[DOCUMENT] An error occurred while updating Employee Document ${id}: ${(error as Error).message}`,
         (error as Error).stack,
