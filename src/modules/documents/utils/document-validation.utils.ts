@@ -3,6 +3,11 @@ import { BadRequestException } from '@nestjs/common';
 import { extname } from 'node:path';
 
 import { DOCUMENT_CONSTANTS } from '../document-management/constants/document.constants.js';
+
+export function isValidDocumentId(id: number): boolean {
+  return Number.isSafeInteger(id) && id > 0;
+}
+
 export const validateDocumentFile = (
   file: Express.Multer.File,
 ): void => {

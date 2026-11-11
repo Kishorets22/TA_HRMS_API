@@ -34,13 +34,31 @@ export class DocumentManagementRepository {
 
     return this.employeeDocumentRepository.save(document);
   }
+
+  // UPDATE EMPLOYEE DOCUMENT
+  async updateEmployeeDocument(
+    employeeDocument: EmployeeDocument,
+  ): Promise<EmployeeDocument> {
+    return this.employeeDocumentRepository.save(employeeDocument);
+  }
+
   // GET ACTIVE DOCUMENT TYPE BY ID
-getActiveDocumentTypeById(id: number): Promise<DocumentType> {
-  return this.documentTypeRepository.findOneByOrFail({
-    id,
-    isActive: true,
-  });
-}
+  getActiveDocumentTypeById(id: number): Promise<DocumentType> {
+    return this.documentTypeRepository.findOneByOrFail({
+      id,
+      isActive: true,
+    });
+  }
+
+  // FIND ACTIVE DOCUMENT TYPE BY ID
+  findActiveDocumentTypeById(id: number): Promise<DocumentType | null> {
+    return this.documentTypeRepository.findOne({
+      where: {
+        id,
+        isActive: true,
+      },
+    });
+  }
 
   // GET EMPLOYEE DOCUMENT BY ID
   getEmployeeDocumentById(id: number): Promise<EmployeeDocument | null> {

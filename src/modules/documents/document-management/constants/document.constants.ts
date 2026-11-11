@@ -13,6 +13,8 @@ import type {
   UploadEmployeeDocumentResponseDto,
 } from '../upload/dto/upload-employee-document-response.dto.js';
 
+import type { UpdateEmployeeDocumentResponse } from '../update/dto/update-employee-document-response.dto.js';
+
 export const DOCUMENT_CONSTANTS = {
   SOURCE: {
     EMPLOYEE_UPLOAD: 'EMPLOYEE_UPLOAD',
@@ -53,22 +55,34 @@ export function prepareEmployeeDocument(
   documentTypeId: number,
   statusId: number,
 ): DeepPartial<EmployeeDocument> {
-  const fileName = basename(file.originalname);
-
   return {
     employeeId: uploadEmployeeDocumentDto.employeeId,
     documentTypeId,
     documentName: uploadEmployeeDocumentDto.documentName,
     documentSource: DOCUMENT_CONSTANTS.SOURCE.EMPLOYEE_UPLOAD,
-    fileName,
-    fileKey: `temporary/${uploadEmployeeDocumentDto.employeeId}/${randomUUID()}-${fileName}`,
-    mimeType: file.mimetype,
-    fileSize: file.size,
+    ...prepareEmployeeDocumentFile(file, uploadEmployeeDocumentDto.employeeId),
     issueDate: new Date(uploadEmployeeDocumentDto.issueDate),
     expiryDate: new Date(uploadEmployeeDocumentDto.expiryDate),
     statusId,
     remarks: uploadEmployeeDocumentDto.remarks,
     createdBy: uploadEmployeeDocumentDto.employeeId,
+  };
+}
+
+export function prepareEmployeeDocumentFile(
+  file: Express.Multer.File,
+  employeeId: number,
+): Pick<
+  DeepPartial<EmployeeDocument>,
+  'fileName' | 'fileKey' | 'mimeType' | 'fileSize'
+> {
+  const fileName = basename(file.originalname);
+
+  return {
+    fileName,
+    fileKey: `temporary/${employeeId}/${randomUUID()}-${fileName}`,
+    mimeType: file.mimetype,
+    fileSize: file.size,
   };
 }
 
@@ -90,11 +104,77 @@ export const DOCUMENT_RESPONSES = {
       fileName: document.fileName,
       mimeType: document.mimeType,
       fileSize: document.fileSize ?? undefined,
-      issueDate: document.issueDate?.toISOString(),
-      expiryDate: document.expiryDate?.toISOString(),
+      issueDate: document.issueDate
+        ? new Date(document.issueDate).toISOString()
+        : undefined,
+      expiryDate: document.expiryDate
+        ? new Date(document.expiryDate).toISOString()
+        : undefined,
       statusId: document.statusId,
       createdAt: document.createdAt,
     } satisfies UploadEmployeeDocumentResponseDto,
+  }),
+
+  // UPDATE EMPLOYEE DOCUMENT
+  updated: (document: EmployeeDocument): UpdateEmployeeDocumentResponse => ({
+    success: true,
+    message: 'Employee document updated successfully',
+    statusCode: HttpStatus.OK,
+    data: {
+      id: document.id,
+      employeeId: document.employeeId,
+      documentTypeId: document.documentTypeId,
+      documentName: document.documentName,
+      documentSource: document.documentSource,
+      fileName: document.fileName,
+      mimeType: document.mimeType,
+      fileSize: document.fileSize ?? undefined,
+      issueDate: document.issueDate
+        ? new Date(document.issueDate).toISOString()
+        : undefined,
+      expiryDate: document.expiryDate
+        ? new Date(document.expiryDate).toISOString()
+        : undefined,
+      statusId: document.statusId,
+      updatedAt: document.updatedAt,
+    },
+  }),
+
+  // INVALID DOCUMENT ID
+  invalidUpdateId: (id: number): UpdateEmployeeDocumentResponse => ({
+    success: false,
+    message: `Invalid employee document ID: ${id}`,
+    statusCode: HttpStatus.BAD_REQUEST,
+  }),
+
+  // UPDATE NOT FOUND
+  updateNotFound: (id: number): UpdateEmployeeDocumentResponse => ({
+    success: false,
+    message: `Employee document with ID ${id} not found`,
+    statusCode: HttpStatus.NOT_FOUND,
+  }),
+
+  // DOCUMENT TYPE NOT FOUND
+  updateDocumentTypeNotFound: (
+    id: number,
+  ): UpdateEmployeeDocumentResponse => ({
+    success: false,
+    message: `Active document type with ID ${id} not found`,
+    statusCode: HttpStatus.NOT_FOUND,
+  }),
+
+  // INVALID UPDATE
+  invalidUpdate: (message: string): UpdateEmployeeDocumentResponse => ({
+    success: false,
+    message,
+    statusCode: HttpStatus.BAD_REQUEST,
+  }),
+
+  // INVALID FILE DURING UPDATE
+  invalidUpdateFile: (message: string): UpdateEmployeeDocumentResponse => ({
+    success: false,
+    message,
+    statusCode: HttpStatus.BAD_REQUEST,
   }),
 
   // NOT FOUND
